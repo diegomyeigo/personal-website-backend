@@ -8,8 +8,11 @@ CORS(app)
 def test():
     return {"message": "Successful test"}
 
-@app.route("/api/survey", methods=["POST"])
+@app.route('/api/survey', methods=["POST", "OPTIONS"])
 def submit_survey():
+    if request.method == "OPTIONS":
+        return "", 200
+
     data = request.get_json()
 
     print(data)
