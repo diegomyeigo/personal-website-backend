@@ -6,20 +6,17 @@ CORS(app)
 
 @app.route('/api/test')
 def test():
-    return {"message": "Successful test"}
+    return {"message": "Successful NEW test"}
 
-@app.route('/api/survey', methods=["POST", "OPTIONS"])
+@app.route('/api/survey', methods=["POST"])
 def submit_survey():
-    if request.method == "OPTIONS":
-        return "", 200
-
     data = request.get_json()
 
     print(data)
 
     return {
         "success": True,
-        "message": "Received!"
+        "message": "POST Received!"
     }
 
 @app.route("/api/routes")
