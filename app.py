@@ -1,19 +1,27 @@
+import os
+import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+
 app = Flask(__name__)
+
 CORS(app, origins=[
     "https://diegoperezanalytics.com",
     "http://127.0.0.1:5500"
 ])
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+
+def get_db_connection():
+    return psycopg.connect(DATABASE_URL)
 
 def convert_number(value):
     try:
         return float(value)
     except (ValueError, TypeError):
         return None
-
 
 def validate_range(number):
     if number is None:
@@ -48,6 +56,9 @@ def prepare_for_database(form_data):
         database_record[field] = validated_number
 
     return database_record
+
+
+connection = get_db_connection()
 
 
 @app.route('/api/test')
