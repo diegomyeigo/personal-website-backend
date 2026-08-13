@@ -2,9 +2,18 @@ import os
 import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_mail import Mail, Message
 
 
 app = Flask(__name__)
+
+app.config["MAIL_SERVER"] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
+
+mail = Mail(app)
 
 CORS(app, origins=[
     "https://diegoperezanalytics.com",
@@ -12,6 +21,7 @@ CORS(app, origins=[
 ])
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
+
 
 
 def get_db_connection():
@@ -35,8 +45,9 @@ def validate_range(number):
 def prepare_for_database(form_data):
     database_record = {}
 
-    database_record["age"] = form_data["age"]
-    database_record["household"] = form_data["household"]
+    database_record["email"] = str(form_data["email"])
+    database_record["age"] = str(form_data["age"])
+    database_record["household"] = str(form_data["household"])
 
     typed_fields = ["income", "rent", "savings", "emergency"]
 
@@ -69,6 +80,8 @@ def test():
 def submit_survey():
 
     form_data = request.get_json(silent=True)
+
+    print(form_data)
 
     if not form_data:
         return jsonify({
@@ -107,11 +120,23 @@ def submit_survey():
             "message": str(e)
         }), 422
 
+    user_email = database_record["email"]
+    message = Message(
+        subject="Thank you!",
+        recipients=[user_email],
+        body="Thanks for completing my finance survey!\nYou're alright ;)",
+        sender="jdiegoperez001@gmail.com"
+    )
 
-    return jsonify({
-        "success": True,
-        "message": "Looks good!"
-    }), 200
+    try:
+        mail.send(message)
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Email error: {e}"
+        }), 500
+
+    return jsonify(database_record), 200
 
 @app.route("/api/routes")
 def routes():
