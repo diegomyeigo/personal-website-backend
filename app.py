@@ -2,18 +2,18 @@ import os
 import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-# from flask_mail import Mail, Message
+from flask_mail import Mail, Message
 
 
 app = Flask(__name__)
 
-# app.config["MAIL_SERVER"] = 'smtp.gmail.com'
-# app.config['MAIL_PORT'] = 587
-# app.config['MAIL_USE_TLS'] = True
-# app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
-# app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
+app.config["MAIL_SERVER"] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 
-# mail = Mail(app)
+mail = Mail(app)
 
 CORS(app, origins=[
     "https://diegoperezanalytics.com",
@@ -121,20 +121,20 @@ def submit_survey():
         }), 422
 
     user_email = database_record["email"]
-    # message = Message(
-    #     subject="Thank you!",
-    #     recipients=[user_email],
-    #     body="Thanks for completing my finance survey!\nYou're alright ;)",
-    #     sender="jdiegoperez001@gmail.com"
-    # )
+    message = Message(
+        subject="Thank you!",
+        recipients=[user_email],
+        body="Thanks for completing my finance survey!\nYou're alright ;)",
+        sender="jdiegoperez001@gmail.com"
+    )
 
-    # try:
-    #     mail.send(message)
-    # except Exception as e:
-    #     return jsonify({
-    #         "success": False,
-    #         "message": f"Email error: {e}"
-    #     }), 500
+    try:
+        mail.send(message)
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Email error: {e}"
+        }), 500
 
     return jsonify(database_record), 200
 
