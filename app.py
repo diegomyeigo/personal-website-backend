@@ -138,19 +138,20 @@ def submit_survey():
             <p>Thanks for taking the time to complete my survey</p>
             <p>You're alright ;)</p>
             <br>
-            <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
         </body>
     </html>
     """
 
-    with app.open_resource("rigby.jpg") as img:
-        message.attach(
-            filename="rigby.jpg",
-            content_type="image/jpeg",
-            data=img.read(),
-            disposition="inline",
-            headers=[("Content-ID", "<rigby>")]
-        )
+                # <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
+
+    # with app.open_resource("rigby.jpg") as img:
+    #     message.attach(
+    #         filename="rigby.jpg",
+    #         content_type="image/jpeg",
+    #         data=img.read(),
+    #         disposition="inline",
+    #         headers=[("Content-ID", "<rigby>")]
+    #     )
 
     try:
         mail.send(message)
