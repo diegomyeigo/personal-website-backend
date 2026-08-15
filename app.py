@@ -122,17 +122,33 @@ def submit_survey():
 
     user_email = database_record["email"]
     message = Message(
-        subject="Thank you!",
+        subject="Thank you for taking my survey!",
         recipients=[user_email],
-        body="**This is an automated message. Do not reply**\n\nThanks for completing my finance survey!\nYou're alright ;)\n\n",
         sender="jdiegoperez001@gmail.com"
     )
+
+    message.html = """
+    <html>
+        <body>
+            <p><b>**This is an automated message. Please do not respond**</b></p>
+            <br>
+            <h1>Thank you!</h1>
+            <br><br>
+            <p>Thanks for taking the time to complete my survey</p>
+            <p>You're alright ;)</p>
+            <br>
+            <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
+        </body>
+    </html>
+    """
 
     with app.open_resource("email_assets/rigby.jpg") as img:
         message.attach(
             filename="email_assets/rigby.jpg",
-            content_type="image/jpg",
-            data=img.read()
+            content_type="image/jpeg",
+            data=img.read(),
+            disposition="inline",
+            headers=[("Content-ID", "<rigby>")]
         )
 
     try:
