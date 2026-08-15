@@ -123,33 +123,33 @@ def submit_survey():
     user_email = database_record["email"]
     message = Message(
         subject="Thank you for taking my survey!",
-        body="Thanks for taking the time to complete my survey!\nYou're alright ;)\n\n",
+        # body="Thanks for taking the time to complete my survey!\nYou're alright ;)\n\n",
         recipients=[user_email],
         sender="jdiegoperez001@gmail.com"
     )
 
-    # message.html = """
-    # <html>
-    #     <body>
-    #         <p><b>**This is an automated message. Please do not respond**</b></p>
-    #         <br>
-    #         <h1>Thank you!</h1>
-    #         <br><br>
-    #         <p>Thanks for taking the time to complete my survey</p>
-    #         <p>You're alright ;)</p>
-    #         <br>
-    #         <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
-    #     </body>
-    # </html>
-    # """
+    message.html = """
+    <html>
+        <body>
+            <p><b>**This is an automated message. Please do not respond**</b></p>
+            <br>
+            <h1>Thank you!</h1>
+            <br><br>
+            <p>Thanks for taking the time to complete my survey</p>
+            <p>You're alright ;)</p>
+            <br>
+            <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
+        </body>
+    </html>
+    """
 
     with app.open_resource("email_assets/rigby.jpg") as img:
         message.attach(
-            filename="email_assets/rigby.jpg",
+            filename="rigby.jpg",
             content_type="image/jpeg",
             data=img.read(),
             disposition="inline"
-            # headers=[("Content-ID", "<rigby>")]
+            headers=[("Content-ID", "<rigby>")]
         )
 
     try:
