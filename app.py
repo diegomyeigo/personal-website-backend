@@ -148,7 +148,7 @@ def submit_survey():
             filename="rigby.jpg",
             content_type="image/jpeg",
             data=img.read(),
-            disposition="inline"
+            disposition="inline",
             headers=[("Content-ID", "<rigby>")]
         )
 
