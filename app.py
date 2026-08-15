@@ -124,9 +124,16 @@ def submit_survey():
     message = Message(
         subject="Thank you!",
         recipients=[user_email],
-        body="Thanks for completing my finance survey!\nYou're alright ;)",
+        body="**This is an automated message. Do not reply**\n\nThanks for completing my finance survey!\nYou're alright ;)\n\n",
         sender="jdiegoperez001@gmail.com"
     )
+
+    with app.open_resource("email_assets/rigby.jpg") as img:
+        message.attach(
+            filename="email_assets/rigby.jpg",
+            content_type="image/jpg",
+            data=img.read()
+        )
 
     try:
         mail.send(message)
