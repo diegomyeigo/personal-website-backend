@@ -3,8 +3,6 @@ import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
 
@@ -124,12 +122,14 @@ def submit_survey():
         }), 422
 
     user_email = database_record["email"]
-    root = MIMEMultipart('related')
-    root['Subject'] = "Thank you for taking my survey!"
-    root['From'] = "jdiegoperez001@gmail.com"
-    root['To'] = user_email
+    message = Message(
+        subject="Thank you for taking my survey!",
+        # body="Thanks for taking the time to complete my survey!\nYou're alright ;)\n\n",
+        recipients=[user_email],
+        sender="jdiegoperez001@gmail.com"
+    )
 
-    html = """
+    message.html = """
     <html>
         <body>
             <p><b>**This is an automated message. Please do not respond**</b></p>
@@ -141,28 +141,11 @@ def submit_survey():
     </html>
     """         
 
-    html_part = MIMEText(html, 'html')
-    root.attach(html_part)
-
-    image_path = os.path.join(os.path.dirname(__file__), "email_assets", "rigby.jpg")
-
-    with open(image_path, "rb") as img:
+    with app.open_resource("email_assets/rigby.jpg") as img:
         mime_img = MIMEImage(img.read(), _subtype="jpeg")
         mime_img.add_header("Content-ID", "<rigby>")
         mime_img.add_header("Content-Disposition", "inline", filename="rigby.jpg")
-        root.attach(mime_img)
-        # message.attach(
-        #     filename="rigby.jpg",
-        #     content_type="image/jpeg",
-        #     data=img.read(),
-        #     disposition="inline",
-        #     headers=[("Content-ID", "<rigby>")]
-        # )
-
-        message = Message()
-        message.sender = "jdiegoperez001@gmail.com"
-        message.recipients = [user_email]
-        message.msg = root.as_string()
+        message.attach(mime_img)
 
     try:
         mail.send(message)
