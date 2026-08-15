@@ -142,7 +142,7 @@ def submit_survey():
     """         
 
     with app.open_resource("email_assets/rigby.jpg") as img:
-        mime_img = MIMEImage(img.read(), _subtype="jpeg")
+        mime_img = MIMEImage(img.read(), _subtype="jpg")
         mime_img.add_header("Content-ID", "<rigby>")
         mime_img.add_header("Content-Disposition", "inline", filename="rigby.jpg")
         message.attach(mime_img)
