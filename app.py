@@ -143,7 +143,7 @@ def submit_survey():
     </html>
     """
 
-    with app.open_resource("email_assets/rigby.jpg") as img:
+    with app.open_resource("rigby.jpg") as img:
         message.attach(
             filename="rigby.jpg",
             content_type="image/jpeg",
