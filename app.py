@@ -3,6 +3,7 @@ import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
+from email.mime.image import MIMEImage
 
 
 app = Flask(__name__)
@@ -132,26 +133,28 @@ def submit_survey():
     <html>
         <body>
             <p><b>**This is an automated message. Please do not respond**</b></p>
-            <br>
             <h1>Thank you!</h1>
-            <br><br>
+            <br>
             <p>Thanks for taking the time to complete my survey</p>
             <p>You're alright ;)</p>
             <br>
+            <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
         </body>
     </html>
-    """
+    """         
 
-                # <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
-
-    # with app.open_resource("rigby.jpg") as img:
-    #     message.attach(
-    #         filename="rigby.jpg",
-    #         content_type="image/jpeg",
-    #         data=img.read(),
-    #         disposition="inline",
-    #         headers=[("Content-ID", "<rigby>")]
-    #     )
+    with app.open_resource("email_assets/rigby.jpg") as img:
+        mime_img = MIMEImage(img.read(), _subtype="jpeg")
+        mime_img.add_header("Content-ID", "<rigby>")
+        mime_img.add_header("Content-Disposition", "inline", filename="rigby.png")
+        message.attach(mime_img)
+        # message.attach(
+        #     filename="rigby.jpg",
+        #     content_type="image/jpeg",
+        #     data=img.read(),
+        #     disposition="inline",
+        #     headers=[("Content-ID", "<rigby>")]
+        # )
 
     try:
         mail.send(message)
