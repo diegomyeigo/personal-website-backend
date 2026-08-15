@@ -164,8 +164,6 @@ def submit_survey():
         message.recipients = [user_email]
         message.msg = root.as_string()
 
-        mail.send(message)
-
     try:
         mail.send(message)
     except Exception as e:
