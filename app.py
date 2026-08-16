@@ -69,6 +69,37 @@ def prepare_for_database(form_data):
 
     return database_record
 
+def generate_email_message(user_email):
+    message = Message(
+        subject="Successful survey submission!",
+        # body="Thanks for taking the time to complete my survey!\nYou're alright ;)\n\n",
+        recipients=[user_email],
+        sender="jdiegoperez001@gmail.com"
+    )
+
+    message.html = """
+    <html>
+        <body>
+            <p><b>**This is an automated message. Please do not respond**</b></p>
+            <h2>Thanks for taking some time to complete my survey</h2>
+            <p>I don't care what everyone else says about you..</p>
+            <p>You're alright ;)</p>
+            <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
+        </body>
+    </html>
+    """         
+
+    with app.open_resource("email_assets/rigby.jpg") as img:
+        message.attach(
+            "rigby.jpg",
+            "image/jpeg",
+            data=img.read(),
+            disposition="inline",
+            headers={"Content-ID": "<rigby>"}
+        )
+
+    return message
+
 
 connection = get_db_connection()
 
@@ -122,33 +153,8 @@ def submit_survey():
         }), 422
 
     user_email = database_record["email"]
-    message = Message(
-        subject="Thank you for taking my survey!",
-        # body="Thanks for taking the time to complete my survey!\nYou're alright ;)\n\n",
-        recipients=[user_email],
-        sender="jdiegoperez001@gmail.com"
-    )
 
-    message.html = """
-    <html>
-        <body>
-            <p><b>**This is an automated message. Please do not respond**</b></p>
-            <h1>Thank you!</h1>
-            <p>Thanks for taking the time to complete my survey</p>
-            <p>You're alright ;)</p>
-            <img src="cid:rigby" alt="Rigby the cat" width="300" height="300">
-        </body>
-    </html>
-    """         
-
-    with app.open_resource("email_assets/rigby.jpg") as img:
-        message.attach(
-            "rigby.jpg",
-            "image/jpeg",
-            data=img.read(),
-            disposition="inline",
-            headers={"Content-ID": "<rigby>"}
-        )
+    message = generate_email_message(user_email)
 
     try:
         mail.send(message)
