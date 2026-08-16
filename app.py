@@ -3,7 +3,6 @@ import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
-from email.mime.image import MIMEImage
 
 
 app = Flask(__name__)
@@ -22,7 +21,6 @@ app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 mail = Mail(app)
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
 
 
 def get_db_connection():
@@ -101,12 +99,10 @@ def generate_email_message(user_email):
     return message
 
 
-connection = get_db_connection()
-
-
 @app.route('/api/test')
 def test():
     return {"message": "Successful NEW test"}
+
 
 @app.route('/api/survey', methods=["POST"])
 def submit_survey():
@@ -143,17 +139,58 @@ def submit_survey():
                 "message": f"Missing field: {field}"
             }), 422
 
+
     try:
         database_record = prepare_for_database(form_data)
 
     except ValueError as e:
+        print(e)
         return jsonify({
             "success": False,
             "message": str(e)
         }), 422
 
-    user_email = database_record["email"]
 
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+            INSERT INTO survey_responses (
+            email,
+            age,
+            household,
+            income,
+            rent,
+            savings,
+            emergency_funds
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            database_record["email"],
+            database_record["age"],
+            database_record["household"],
+            database_record["income"],
+            database_record["rent"],
+            database_record["savings"],
+            database_record["emergency"]
+        ))
+
+        connection.commit()
+
+    except Exception as e:
+        connection.rollback()
+        print(e)
+
+        return jsonify({
+            "success": False,
+            "error": "Database error"
+        }), 500
+
+    finally:
+        connection.close()
+
+
+    user_email = database_record["email"]
     message = generate_email_message(user_email)
 
     try:
@@ -164,7 +201,12 @@ def submit_survey():
             "message": f"Email error: {e}"
         }), 500
 
-    return jsonify(database_record), 200
+
+    return jsonify({
+        "success": True
+        "message": "Record added to database and confirmation email sent"
+    }), 200
+
 
 @app.route("/api/routes")
 def routes():
