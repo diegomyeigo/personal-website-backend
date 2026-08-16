@@ -203,7 +203,7 @@ def submit_survey():
 
 
     return jsonify({
-        "success": True
+        "success": True,
         "message": "Record added to database and confirmation email sent"
     }), 200
 
