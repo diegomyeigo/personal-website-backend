@@ -3,6 +3,7 @@ import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
+from email_validator import validate_email, EmailNotValidError
 
 
 app = Flask(__name__)
@@ -124,6 +125,7 @@ def submit_survey():
         }), 403
 
     required_fields = [
+        "email",
         "age",
         "household",
         "income",
@@ -139,6 +141,26 @@ def submit_survey():
                 "message": f"Missing field: {field}"
             }), 422
 
+    user_email = form_data["email"]
+
+    try:
+        validate_email(user_email)
+    except EmailNotValidError:
+        return jsonify({
+            "success": False,
+            "message": "Invalid email"
+        }), 400
+
+    message = generate_email_message(user_email)
+
+    try:
+        mail.send(message)
+    except Exception as e:
+        print(f"Email error: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Email error: {e}"
+        }), 500
 
     try:
         database_record = prepare_for_database(form_data)
@@ -177,6 +199,12 @@ def submit_survey():
 
         connection.commit()
 
+    except psycopg.errors.UniqueViolation:
+        return jsonify({
+            "success": False,
+            "message": "Duplicate Email"
+        }), 409
+
     except Exception as e:
         connection.rollback()
         print(e)
@@ -188,18 +216,6 @@ def submit_survey():
 
     finally:
         connection.close()
-
-
-    user_email = database_record["email"]
-    message = generate_email_message(user_email)
-
-    try:
-        mail.send(message)
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "message": f"Email error: {e}"
-        }), 500
 
 
     return jsonify({
