@@ -1,9 +1,9 @@
 import os
-import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
 from validate import validate_form
+from database import insert_to_database
 
 
 app = Flask(__name__)
@@ -18,12 +18,6 @@ app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
 app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 
 mail = Mail(app)
-
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-
-def get_db_connection():
-    return psycopg.connect(DATABASE_URL)
 
 def generate_email_message(user_email):
     message = Message(
@@ -56,6 +50,8 @@ def generate_email_message(user_email):
 
     return message
 
+def create_json(message, code):
+    return jsonify({"message": message}), int(code)
 
 @app.route('/api/test')
 def test():
@@ -70,56 +66,15 @@ def submit_survey():
 
     valid, message, code, record = validate_form(form_data)
 
-#   add email_duplicate_validation, move email sending after database insertion (perhaps createa module first)
     print(message)
     if not valid:
-        return jsonify({
-            "message": message
-        }), code
+        return create_json(message, code)
 
-    connection = get_db_connection()
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-            INSERT INTO survey_responses (
-            email,
-            age,
-            household,
-            income,
-            rent,
-            savings,
-            emergency_funds
-            )
-            VALUES (%s,%s,%s,%s,%s,%s,%s)
-        """, (
-            record["email"],
-            record["age"],
-            record["household"],
-            record["income"],
-            record["rent"],
-            record["savings"],
-            record["emergency"]
-        ))
+    valid, message, code = insert_to_database(record)
 
-        connection.commit()
-
-    except psycopg.errors.UniqueViolation:
-        return jsonify({
-            "success": False,
-            "message": "Duplicate Email"
-        }), 409
-
-    except Exception as e:
-        connection.rollback()
-        print(e)
-
-        return jsonify({
-            "success": False,
-            "error": "Database error"
-        }), 500
-
-    finally:
-        connection.close()
+    print(message)
+    if not valid:
+        return create_json(message, code)
 
     email = form_data["email"]
     message = generate_email_message(email)
