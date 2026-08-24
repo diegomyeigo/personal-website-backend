@@ -3,15 +3,13 @@ import psycopg
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
-from email_validator import validate_email, EmailNotValidError
+from validate import validate_form
 
 
 app = Flask(__name__)
 
-CORS(app, origins=[
-    "https://diegoperezanalytics.com",
-    "http://127.0.0.1:5500"
-])
+ORIGIN = os.environ.get("CORS_ORIGIN")
+CORS(app, origins=[ORIGIN])
 
 app.config["MAIL_SERVER"] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -26,47 +24,6 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db_connection():
     return psycopg.connect(DATABASE_URL)
-
-def convert_number(value):
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return None
-
-def validate_range(number):
-    if number is None:
-        return None
-    
-    if (number < 0) or (number > 1_000_000_000):
-        return None
-
-    return number
-
-def prepare_for_database(form_data):
-    database_record = {}
-
-    database_record["email"] = str(form_data["email"])
-    database_record["age"] = str(form_data["age"])
-    database_record["household"] = str(form_data["household"])
-
-    typed_fields = ["income", "rent", "savings", "emergency"]
-
-    for field in typed_fields:
-        raw_value = form_data[field]
-
-        number_value = convert_number(raw_value)
-
-        if number_value is None:
-            raise ValueError(f"{field} must be a valid number")
-
-        validated_number = validate_range(number_value)
-
-        if validated_number is None:
-            raise ValueError(f"{field} is outside of allowed range")
-
-        database_record[field] = validated_number
-
-    return database_record
 
 def generate_email_message(user_email):
     message = Message(
@@ -109,69 +66,16 @@ def test():
 def submit_survey():
 
     form_data = request.get_json(silent=True)
-
     print(form_data)
 
-    if not form_data:
+    valid, message, code, record = validate_form(form_data)
+
+#   add email_duplicate_validation, move email sending after database insertion (perhaps createa module first)
+    print(message)
+    if not valid:
         return jsonify({
-            "success": False,
-            "message": "Invalid or missing JSON data"
-        }), 400
-
-    if form_data.get("granny", "").strip() != "":
-        return jsonify({
-            "success": False,
-            "message": "Bot detected!"
-        }), 403
-
-    required_fields = [
-        "email",
-        "age",
-        "household",
-        "income",
-        "rent",
-        "savings",
-        "emergency"
-    ]
-
-    for field in required_fields:
-        if field not in form_data:
-            return jsonify({
-                "success": False,
-                "message": f"Missing field: {field}"
-            }), 422
-
-    user_email = form_data["email"]
-
-    try:
-        validate_email(user_email)
-    except EmailNotValidError:
-        return jsonify({
-            "success": False,
-            "message": "Invalid email"
-        }), 400
-
-    message = generate_email_message(user_email)
-
-    try:
-        mail.send(message)
-    except Exception as e:
-        print(f"Email error: {e}")
-        return jsonify({
-            "success": False,
-            "message": f"Email error: {e}"
-        }), 500
-
-    try:
-        database_record = prepare_for_database(form_data)
-
-    except ValueError as e:
-        print(e)
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 422
-
+            "message": message
+        }), code
 
     connection = get_db_connection()
     try:
@@ -188,13 +92,13 @@ def submit_survey():
             )
             VALUES (%s,%s,%s,%s,%s,%s,%s)
         """, (
-            database_record["email"],
-            database_record["age"],
-            database_record["household"],
-            database_record["income"],
-            database_record["rent"],
-            database_record["savings"],
-            database_record["emergency"]
+            record["email"],
+            record["age"],
+            record["household"],
+            record["income"],
+            record["rent"],
+            record["savings"],
+            record["emergency"]
         ))
 
         connection.commit()
@@ -217,6 +121,16 @@ def submit_survey():
     finally:
         connection.close()
 
+    email = form_data["email"]
+    message = generate_email_message(email)
+
+    try:
+        mail.send(message)
+    except Exception as e:
+        print(f"Email error: {e}")
+        return jsonify({
+            "message": f"Email error: {e}"
+        }), 500
 
     return jsonify({
         "success": True,
