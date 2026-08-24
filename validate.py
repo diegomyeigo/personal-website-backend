@@ -20,9 +20,9 @@ def validate_form(form_data):
     try:
         database_record = prepare_for_database(form_data)
     except ValueError as err:
-        return False, err, 422, {}
+        return False, str(err), 422, {}
     except Exception as err:
-        return False, err, 400, {}
+        return False, str(err), 400, {}
 
     return True, "Form data successfully validated and prepared for database", 200, database_record
 
