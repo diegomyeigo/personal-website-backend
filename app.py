@@ -2,8 +2,8 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
-from validate import validate_form
-from database import insert_to_database
+from validate import validate_form, FormIntegrityError
+from database import insert_to_database, DuplicateError, DatabaseError
 
 
 app = Flask(__name__)
@@ -19,11 +19,27 @@ app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 
 mail = Mail(app)
 
-def generate_email_message(user_email):
+class EmailError(Exception):
+    pass
+
+def survey_submission_service(form):
+    validated = validate_form(form)
+    email = validated["email"]
+    insert_to_database(validated)
+    send_email(email)
+
+def send_email(email):
+    message = generate_email_message(email)
+
+    try:
+        mail.send(message)
+    except Exception as e:
+        raise EmailError("Unexpected error occurred while sending email") from e
+
+def generate_email_message(email):
     message = Message(
         subject="Successful survey submission!",
-        # body="Thanks for taking the time to complete my survey!\nYou're alright ;)\n\n",
-        recipients=[user_email],
+        recipients=[email],
         sender="jdiegoperez001@gmail.com"
     )
 
@@ -50,8 +66,11 @@ def generate_email_message(user_email):
 
     return message
 
-def create_json(message, code):
-    return jsonify({"message": message}), int(code)
+def create_json(success, message, code):
+    return jsonify({
+        "success": success,
+        "message": message
+        }), int(code)
 
 @app.route('/api/test')
 def test():
@@ -61,46 +80,30 @@ def test():
 @app.route('/api/survey', methods=["POST"])
 def submit_survey():
 
-    form_data = request.get_json(silent=True)
-    print(form_data)
-
-    valid, message, code, record = validate_form(form_data)
-
-    print(message)
-    if not valid:
-        return create_json(message, code)
-
-    valid, message, code = insert_to_database(record)
-
-    print(message)
-    if not valid:
-        return create_json(message, code)
-
-    email = form_data["email"]
-    message = generate_email_message(email)
+    form = request.get_json(silent=True)
+    print(form)
 
     try:
-        mail.send(message)
+        survey_submission_service(form)
+
+    except FormIntegrityError as e:
+        print(e)
+        return create_json(False, "FormIntegrityError", 400)
+    except DuplicateError as e:
+        print(e)
+        return create_json(False, "DuplicateError", 409)
+    except DatabaseError as e:
+        print(e)
+        return create_json(False, "DatabaseError", 503)
+    except EmailError as e:
+        print(e)
+        return create_json(False, "EmailError", 500)
     except Exception as e:
-        print(f"Email error: {e}")
-        return jsonify({
-            "message": f"Email error: {e}"
-        }), 500
+        print(e)
+        return create_json(False, "UnexpectedError", 500)
 
-    return jsonify({
-        "success": True,
-        "message": "Record added to database and confirmation email sent"
-    }), 200
-
-
-@app.route("/api/routes")
-def routes():
-    return {
-        "routes": [
-            str(rule)
-            for rule in app.url_map.iter_rules()
-        ]
-    }
+    print("Submission successful!")
+    return create_json(True, "Survey Submission Service Successful", 200)
 
 if __name__ == '__main__':
     app.run(debug=True)

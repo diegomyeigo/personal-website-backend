@@ -3,6 +3,12 @@ import psycopg
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+class DatabaseError(Exception):
+    pass
+
+class DuplicateError(UniqueError):
+    pass
+
 def get_db_connection():
     return psycopg.connect(DATABASE_URL)
 
@@ -37,13 +43,11 @@ def insert_to_database(record):
 
     except psycopg.errors.UniqueViolation:
         connection.rollback()
-        return False, "Duplicate Email", 409
+        raise DuplicateError("Email already in the database")
 
     except Exception as e:
         connection.rollback()
-        return False, f"Database error: {e}", 500
+        raise DatabaseError("Unexpected database error") from e
 
     finally:
         connection.close()
-
-    return True, "Successful database transaction", 200
