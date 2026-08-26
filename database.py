@@ -6,7 +6,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 class DatabaseError(Exception):
     pass
 
-class DuplicateError(UniqueError):
+class DuplicateError(Exception):
     pass
 
 def get_db_connection():
