@@ -12,7 +12,7 @@ def validate_form(form_data):
     try:
         database_record = prepare_for_database(form_data, email)
     except ValueError as e:
-        raise FormIntegrityError("Invalid data") from e
+        raise FormIntegrityError(f"Invalid data:\n{e}")
 
     return database_record
 
@@ -85,12 +85,12 @@ def prepare_for_database(form_data, email):
         number_value = convert_number(raw_value)
 
         if number_value is None:
-            raise ValueError(f"{field} must be a valid number")
+            raise ValueError(f"'{field}' must be a valid number")
 
         validated_number = validate_range(number_value)
 
         if validated_number is None:
-            raise ValueError(f"{field} is outside of allowed range")
+            raise ValueError(f"'{field}' is outside of allowed range")
 
         database_record[field] = validated_number
 

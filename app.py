@@ -35,7 +35,7 @@ def send_email(email):
     try:
         mail.send(message)
     except Exception as e:
-        raise EmailError("Unexpected error occurred while sending email") from e
+        raise EmailError(f"Unexpected error occurred while sending email\n{e}")
 
 def generate_email_message(email):
     message = Message(

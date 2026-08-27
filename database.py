@@ -47,7 +47,7 @@ def insert_to_database(record):
 
     except Exception as e:
         connection.rollback()
-        raise DatabaseError("Unexpected database error") from e
+        raise DatabaseError(f"Unexpected database error\n{e}")
 
     finally:
         connection.close()
