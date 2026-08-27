@@ -7,10 +7,7 @@ def validate_form(form_data):
     check_form_validity(form_data)
 
     email = str(form_data["email"]).strip()
-    try:
-        validate_email(email)
-    except EmailNotValidError as e:
-        raise FormIntegrityError("Invalid email")
+    validate_email(email)
     
     try:
         database_record = prepare_for_database(form_data, email)

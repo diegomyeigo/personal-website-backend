@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_mail import Mail, Message
 from validate import validate_form, FormIntegrityError
 from database import insert_to_database, DuplicateError, DatabaseError
+from email_validator import EmailNotValidError
 
 
 app = Flask(__name__)
@@ -89,6 +90,9 @@ def submit_survey():
     except FormIntegrityError as e:
         print(e)
         return create_json(False, "FormIntegrityError", 400)
+    except EmailNotValidError:
+        print("Invalid email")
+        return create_json(False, "InvalidEmail", 400)
     except DuplicateError as e:
         print(e)
         return create_json(False, "DuplicateError", 409)
