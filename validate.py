@@ -7,7 +7,10 @@ def validate_form(form_data):
     check_form_validity(form_data)
 
     email = str(form_data["email"]).strip()
-    validate_email(email)
+    if email:
+        validate_email(email)
+    else:
+        email = None
     
     try:
         database_record = prepare_for_database(form_data, email)
@@ -37,9 +40,9 @@ def check_form_validity(form_data):
         if field not in form_data:
             raise FormIntegrityError(f"Missing field: {field}")
 
-    typed_fields = ["email", "income", "rent", "savings", "emergency"]
+    required_typed_fields = ["income", "rent", "savings", "emergency"]
 
-    for field in typed_fields:
+    for field in required_typed_fields:
         response = str(form_data[field])
 
         if response.strip() == "":

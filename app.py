@@ -27,7 +27,8 @@ def survey_submission_service(form):
     validated = validate_form(form)
     email = validated["email"]
     insert_to_database(validated)
-    send_email(email)
+    if email:
+        send_email(email)
 
 def send_email(email):
     message = generate_email_message(email)
