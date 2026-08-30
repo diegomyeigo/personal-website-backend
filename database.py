@@ -25,7 +25,7 @@ def insert_to_database(record):
             household,
             income,
             rent,
-            savings,
+            monthly_savings,
             emergency_funds
             )
             VALUES (%s,%s,%s,%s,%s,%s,%s)
