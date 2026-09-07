@@ -1,7 +1,5 @@
-import os
+from flask import current_app
 import psycopg
-
-DATABASE_URL = os.environ.get("DATABASE_URL")
 
 class DatabaseError(Exception):
     pass
@@ -9,14 +7,20 @@ class DatabaseError(Exception):
 class DuplicateError(Exception):
     pass
 
+def get_db_url():
+    return current_app.config["DATABASE_URL"]
+
 def get_db_connection():
+    DATABASE_URL = get_db_url()
     return psycopg.connect(DATABASE_URL)
 
 def insert_to_database(record):
     
-    connection = get_db_connection()
+    connection = None
     
     try:
+        connection = get_db_connection()
+
         with connection.cursor() as cursor:
             cursor.execute("""
             INSERT INTO survey_responses (
@@ -42,12 +46,15 @@ def insert_to_database(record):
         connection.commit()
 
     except psycopg.errors.UniqueViolation:
-        connection.rollback()
+        if connection:
+            connection.rollback()
         raise DuplicateError("Email already in the database")
 
     except Exception as e:
-        connection.rollback()
+        if connection:
+            connection.rollback()
         raise DatabaseError(f"Unexpected database error\n{e}")
 
     finally:
-        connection.close()
+        if connection:
+            connection.close()

@@ -1,4 +1,4 @@
-from email_validator import validate_email, EmailNotValidError
+from email_validator import validate_email
 
 class FormIntegrityError(ValueError):
     pass
