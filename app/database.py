@@ -69,4 +69,4 @@ def get_submission_count():
 
                 return cursor.fetchone()[0]
     except psycopg.Error as e:
-        raise DatabaseError("Unexpected database error:\n{e}")
+        raise DatabaseError(f"Unexpected database error:\n{e}")
