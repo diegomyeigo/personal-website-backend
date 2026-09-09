@@ -61,7 +61,7 @@ def insert_to_database(record):
 
 def get_submission_count():
     try:
-        with psycopg.connection(get_db_url()) as connection:
+        with psycopg.connect(get_db_url()) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("""
                     SELECT COUNT(*) FROM survey_responses;
