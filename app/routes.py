@@ -59,7 +59,6 @@ def submit_survey():
 def fetch_submission_count():
     try:
         submission_count = get_submission_count()
-        print(submission_count)
 
     except DatabaseError as e:
         print(e)
