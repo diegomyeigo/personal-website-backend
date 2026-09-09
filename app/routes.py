@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 from .validation import validate_form, FormIntegrityError
-from .database import insert_to_database, DuplicateError, DatabaseError
+from .database import insert_to_database, get_submission_count, DuplicateError, DatabaseError
 from .emailer import send_email, EmailError
 from email_validator import EmailNotValidError
 
@@ -54,3 +54,17 @@ def submit_survey():
 
     print("Submission successful!")
     return create_json(True, "Survey Submission Service Successful", 200)
+
+@routes.route('/api/submission_count')
+def fetch_submission_count():
+    try:
+        submission_count = get_submission_count()
+
+    except DatabaseError as e:
+        print(e)
+        return create_json(False, None, 503)
+    except Exception as e:
+        print(e)
+        return create_json(False, None, 500)
+
+    return create_json(True, submission_count, 200)

@@ -58,3 +58,15 @@ def insert_to_database(record):
     finally:
         if connection:
             connection.close()
+
+def get_submission_count():
+    try:
+        with psycopg.connection(get_db_url()) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM survey_responses;
+                """)
+
+                return cursor.fetchone()[0]
+    except psycopg.Error as e:
+        raise DatabaseError("Unexpected database error:\n{e}")
